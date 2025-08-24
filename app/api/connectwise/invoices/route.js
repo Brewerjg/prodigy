@@ -1,12 +1,23 @@
 import { NextResponse } from 'next/server';
-import { getConnectWiseConfig } from '../../../utils/connectwise';
+import { withTenantAuth } from '../../../lib/middleware/tenantMiddleware.js';
+import { getTenantConnectWiseConfig } from '../../../utils/tenantConnectWise.js';
 import axios from 'axios';
 
-export async function GET(request) {
+async function handleGetInvoices(request, tenantContext) {
   try {
     const { searchParams } = new URL(request.url);
     const customerId = searchParams.get('customerId');
-    const { baseUrl, headers } = getConnectWiseConfig();
+    
+    // Check if ConnectWise is configured for this tenant
+    let config;
+    try {
+      config = await getTenantConnectWiseConfig(tenantContext.tenant.id);
+    } catch (error) {
+      console.log('ConnectWise not configured for tenant:', tenantContext.tenant.subdomain);
+      return NextResponse.json([], { status: 200 }); // Return empty array if not configured
+    }
+    
+    const { baseUrl, headers } = config;
 
     console.log('Fetching invoices for customer:', customerId);
 
@@ -36,4 +47,6 @@ export async function GET(request) {
       { status }
     );
   }
-} 
+}
+
+export const GET = withTenantAuth(handleGetInvoices);

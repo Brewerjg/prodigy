@@ -2,13 +2,16 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import { useTenant } from '../hooks/useTenant';
 
 /**
  * Fetches recent tickets from ConnectWise API
  * @returns {Promise<Array>} Array of recent tickets
  */
-const fetchRecentTickets = async () => {
-  const res = await fetch('/api/connectwise/tickets?pageSize=20');
+const fetchRecentTickets = async (getAuthHeaders) => {
+  const res = await fetch('/api/connectwise/tickets?pageSize=20', {
+    headers: getAuthHeaders()
+  });
   if (!res.ok) throw new Error('Failed to fetch tickets');
   return res.json();
 };
@@ -22,12 +25,14 @@ export default function TicketTicker() {
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [currentTicketIndex, setCurrentTicketIndex] = useState(0);
   const router = useRouter();
+  const { getAuthHeaders, isAuthenticated } = useTenant();
 
   // Fetch recent tickets using React Query
   const { data: tickets, isLoading, error } = useQuery({
     queryKey: ['recentTickets'],
-    queryFn: fetchRecentTickets,
+    queryFn: () => fetchRecentTickets(getAuthHeaders),
     refetchInterval: 30000, // Refetch every 30 seconds
+    enabled: isAuthenticated()
     // staleTime: 10000, // Consider data stale after 10 seconds
   });
 

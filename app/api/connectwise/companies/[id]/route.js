@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
-import { getConnectWiseConfig } from '../../../../utils/connectwise';
+import { withTenantAuth } from '../../../../lib/middleware/tenantMiddleware.js';
+import { getTenantConnectWiseConfig } from '../../../../utils/tenantConnectWise.js';
 import axios from 'axios';
 
-export async function GET(request, { params }) {
+async function handleGetCompany(request, tenantContext, { params }) {
   try {
     const { id } = params;
-    const { baseUrl, headers } = getConnectWiseConfig();
+    const { baseUrl, headers } = await getTenantConnectWiseConfig(tenantContext.tenant.id);
 
     const response = await axios.get(`${baseUrl}/company/companies/${id}`, {
       headers
@@ -24,4 +25,11 @@ export async function GET(request, { params }) {
       { status }
     );
   }
+}
+
+export async function GET(request, context) {
+  const handler = withTenantAuth((req, tenantContext) => 
+    handleGetCompany(req, tenantContext, context)
+  );
+  return handler(request);
 }

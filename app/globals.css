@@ -24,3 +24,48 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Improve placeholder text visibility */
+::placeholder {
+  color: #6b7280 !important; /* text-gray-500 */
+  opacity: 1 !important;
+}
+
+::-webkit-input-placeholder {
+  color: #6b7280 !important; /* text-gray-500 */
+  opacity: 1 !important;
+}
+
+::-moz-placeholder {
+  color: #6b7280 !important; /* text-gray-500 */
+  opacity: 1 !important;
+}
+
+:-ms-input-placeholder {
+  color: #6b7280 !important; /* text-gray-500 */
+  opacity: 1 !important;
+}
+
+:-moz-placeholder {
+  color: #6b7280 !important; /* text-gray-500 */
+  opacity: 1 !important;
+}
+
+/* Ensure all input text is dark and readable */
+input[type="text"],
+input[type="email"], 
+input[type="password"],
+input[type="url"],
+input[type="tel"],
+textarea {
+  color: #293241 !important; /* gunmetal-500 for better readability */
+}
+
+input[type="text"]:disabled,
+input[type="email"]:disabled,
+input[type="password"]:disabled,
+input[type="url"]:disabled,
+input[type="tel"]:disabled,
+textarea:disabled {
+  color: #485873 !important; /* gunmetal-300 for disabled inputs */
+}

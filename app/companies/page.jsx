@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
+import { useTenant } from '../hooks/useTenant';
 import { 
   BuildingOfficeIcon, 
   DocumentTextIcon, 
@@ -12,31 +13,38 @@ import {
   ArrowDownIcon
 } from '@heroicons/react/24/outline';
 
-const fetchCompanies = async () => {
-  const res = await fetch('/api/connectwise/companies');
+const fetchCompanies = async (getAuthHeaders) => {
+  const res = await fetch('/api/connectwise/companies', {
+    headers: getAuthHeaders()
+  });
   if (!res.ok) throw new Error('Failed to fetch companies');
   return res.json();
 };
 
-const fetchInvoices = async () => {
-  const res = await fetch('/api/connectwise/invoices');
+const fetchInvoices = async (getAuthHeaders) => {
+  const res = await fetch('/api/connectwise/invoices', {
+    headers: getAuthHeaders()
+  });
   if (!res.ok) throw new Error('Failed to fetch invoices');
   return res.json();
 };
 
 export default function CompaniesPage() {
   const router = useRouter();
+  const { getAuthHeaders, isAuthenticated } = useTenant();
   const [sortOrder, setSortOrder] = useState('a-z'); // 'a-z' or 'z-a'
   const [hideNoInvoices, setHideNoInvoices] = useState(true);
 
   const { data: companies, isLoading: companiesLoading, error: companiesError } = useQuery({
     queryKey: ['companies'],
-    queryFn: fetchCompanies
+    queryFn: () => fetchCompanies(getAuthHeaders),
+    enabled: isAuthenticated()
   });
 
   const { data: invoices, isLoading: invoicesLoading, error: invoicesError } = useQuery({
     queryKey: ['invoices'],
-    queryFn: fetchInvoices
+    queryFn: () => fetchInvoices(getAuthHeaders),
+    enabled: isAuthenticated()
   });
 
   const isLoading = companiesLoading || invoicesLoading;

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getConnectWiseConfig } from '../../../../utils/connectwise';
 import axios from 'axios';
 
-export async function GET(request) {
+export const GET = withTenantAuth(handleGetCompanies);
   try {
     const { searchParams } = new URL(request.url);
     const companyId = searchParams.get('companyId');

@@ -1,3 +1,4 @@
+'use client';
 import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import { 
   Bars3Icon, 
@@ -11,6 +12,7 @@ import {
   UserIcon,
   ArrowRightOnRectangleIcon
 } from '@heroicons/react/24/outline'
+import { useTenant } from '../hooks/useTenant.js';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: ChartBarIcon, current: true },
@@ -24,13 +26,25 @@ function classNames(...classes) {
 }
 
 export default function Navbar() {
+  const { user, tenant, logout } = useTenant();
+  
+  const getUserInitials = () => {
+    if (!user) return '?';
+    const firstName = user.first_name || '';
+    const lastName = user.last_name || '';
+    return (firstName.charAt(0) + lastName.charAt(0)).toUpperCase() || user.email.charAt(0).toUpperCase();
+  };
+
+  const handleLogout = () => {
+    logout();
+  };
   return (
     <Disclosure as="nav" className="bg-white shadow-sm border-b border-gray-200">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="relative flex h-16 justify-between items-center">
           {/* Mobile menu button */}
           <div className="flex items-center sm:hidden">
-            <DisclosureButton className="group relative inline-flex items-center justify-center rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-colors">
+            <DisclosureButton className="group relative inline-flex items-center justify-center rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-colors">
               <span className="absolute -inset-0.5" />
               <span className="sr-only">Open main menu</span>
               <Bars3Icon aria-hidden="true" className="block h-6 w-6 group-data-open:hidden" />
@@ -41,13 +55,18 @@ export default function Navbar() {
           {/* Logo and brand */}
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center space-x-3">
-              <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-sm">
+              <div className="h-10 w-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-sm">
                 <BuildingOfficeIcon className="h-6 w-6 text-white" />
               </div>
               <div className="hidden sm:block">
-                <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-indigo-700 bg-clip-text text-transparent">
-                  ConnectWise Portal
+                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
+                  Prodigy
                 </h1>
+                {tenant && (
+                  <p className="text-xs text-gray-500 -mt-1">
+                    {tenant.name}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -62,7 +81,7 @@ export default function Navbar() {
                   href={item.href}
                   className={classNames(
                     item.current
-                      ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                      ? 'bg-blue-50 text-blue-700 border-blue-200'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 border-transparent',
                     'group flex items-center px-4 py-2 text-sm font-medium rounded-lg border transition-all duration-200'
                   )}
@@ -70,7 +89,7 @@ export default function Navbar() {
                 >
                   <Icon
                     className={classNames(
-                      item.current ? 'text-indigo-500' : 'text-gray-400 group-hover:text-gray-500',
+                      item.current ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500',
                       'mr-2 h-4 w-4'
                     )}
                     aria-hidden="true"
@@ -86,7 +105,7 @@ export default function Navbar() {
             {/* Notifications */}
             <button
               type="button"
-              className="relative rounded-lg p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
+              className="relative rounded-lg p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
             >
               <span className="absolute -inset-1.5" />
               <span className="sr-only">View notifications</span>
@@ -100,53 +119,68 @@ export default function Navbar() {
                 <MenuButton className="relative flex items-center space-x-3 rounded-lg bg-white p-2 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
                   <span className="absolute -inset-1.5" />
                   <span className="sr-only">Open user menu</span>
-                  <div className="h-8 w-8 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-full flex items-center justify-center">
-                    <span className="text-white font-semibold text-sm">JD</span>
+                  <div className="h-8 w-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
+                    <span className="text-white font-semibold text-sm">{getUserInitials()}</span>
                   </div>
-                  <div className="hidden md:block text-left">
-                    <p className="text-sm font-medium text-gray-900">John Doe</p>
-                    <p className="text-xs text-gray-500">john@company.com</p>
-                  </div>
+                  {user && (
+                    <div className="hidden md:block text-left">
+                      <p className="text-sm font-medium text-gray-900">
+                        {user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : user.email}
+                      </p>
+                      <p className="text-xs text-gray-500">{user.email}</p>
+                    </div>
+                  )}
                 </MenuButton>
               </div>
               <MenuItems
                 transition
                 className="absolute right-0 z-10 mt-2 w-64 origin-top-right rounded-xl bg-white py-2 shadow-lg ring-1 ring-gray-200 transition focus:outline-none data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-200 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
               >
-                <div className="px-4 py-3 border-b border-gray-100">
-                  <p className="text-sm font-medium text-gray-900">John Doe</p>
-                  <p className="text-sm text-gray-500">john@company.com</p>
-                </div>
+                {user && (
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <p className="text-sm font-medium text-gray-900">
+                      {user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : user.email}
+                    </p>
+                    <p className="text-sm text-gray-500">{user.email}</p>
+                    {tenant && (
+                      <p className="text-xs text-gray-400 mt-1">
+                        {tenant.name} • {user.role}
+                      </p>
+                    )}
+                  </div>
+                )}
                 
                 <MenuItem>
                   <a
-                    href="#"
+                    href="/profile"
                     className="group flex items-center px-4 py-3 text-sm text-gray-700 data-focus:bg-gray-50 data-focus:text-gray-900 transition-colors"
                   >
-                    <UserIcon className="mr-3 h-4 w-4 text-gray-400 group-data-focus:text-gray-500" />
+                    <UserIcon className="mr-3 h-4 w-4 text-gunmetal-400 group-data-focus:text-gray-500" />
                     Your Profile
                   </a>
                 </MenuItem>
                 
-                <MenuItem>
-                  <a
-                    href="#"
-                    className="group flex items-center px-4 py-3 text-sm text-gray-700 data-focus:bg-gray-50 data-focus:text-gray-900 transition-colors"
-                  >
-                    <Cog6ToothIcon className="mr-3 h-4 w-4 text-gray-400 group-data-focus:text-gray-500" />
-                    Settings
-                  </a>
-                </MenuItem>
+                {user?.role === 'ADMIN' && (
+                  <MenuItem>
+                    <a
+                      href="/setup"
+                      className="group flex items-center px-4 py-3 text-sm text-gray-700 data-focus:bg-gray-50 data-focus:text-gray-900 transition-colors"
+                    >
+                      <Cog6ToothIcon className="mr-3 h-4 w-4 text-gunmetal-400 group-data-focus:text-gray-500" />
+                      ConnectWise Setup
+                    </a>
+                  </MenuItem>
+                )}
                 
                 <div className="border-t border-gray-100 mt-2">
                   <MenuItem>
-                    <a
-                      href="#"
-                      className="group flex items-center px-4 py-3 text-sm text-gray-700 data-focus:bg-gray-50 data-focus:text-gray-900 transition-colors"
+                    <button
+                      onClick={handleLogout}
+                      className="group flex items-center w-full px-4 py-3 text-sm text-gray-700 data-focus:bg-gray-50 data-focus:text-gray-900 transition-colors text-left"
                     >
-                      <ArrowRightOnRectangleIcon className="mr-3 h-4 w-4 text-gray-400 group-data-focus:text-gray-500" />
+                      <ArrowRightOnRectangleIcon className="mr-3 h-4 w-4 text-gunmetal-400 group-data-focus:text-gray-500" />
                       Sign out
-                    </a>
+                    </button>
                   </MenuItem>
                 </div>
               </MenuItems>
@@ -167,7 +201,7 @@ export default function Navbar() {
                 href={item.href}
                 className={classNames(
                   item.current
-                    ? 'bg-indigo-50 border-indigo-500 text-indigo-700'
+                    ? 'bg-blue-50 border-blue-500 text-blue-700'
                     : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800',
                   'group flex items-center border-l-4 py-3 px-3 text-base font-medium transition-colors'
                 )}
@@ -175,7 +209,7 @@ export default function Navbar() {
               >
                 <Icon
                   className={classNames(
-                    item.current ? 'text-indigo-500' : 'text-gray-400 group-hover:text-gray-500',
+                    item.current ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500',
                     'mr-3 h-5 w-5'
                   )}
                   aria-hidden="true"
@@ -187,17 +221,26 @@ export default function Navbar() {
         </div>
         
         {/* Mobile user info */}
-        <div className="border-t border-gray-200 px-4 py-3">
-          <div className="flex items-center space-x-3">
-            <div className="h-10 w-10 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-full flex items-center justify-center">
-              <span className="text-white font-semibold text-sm">JD</span>
-            </div>
-            <div>
-              <p className="text-base font-medium text-gray-800">John Doe</p>
-              <p className="text-sm text-gray-500">john@company.com</p>
+        {user && (
+          <div className="border-t border-gray-200 px-4 py-3">
+            <div className="flex items-center space-x-3">
+              <div className="h-10 w-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
+                <span className="text-white font-semibold text-sm">{getUserInitials()}</span>
+              </div>
+              <div>
+                <p className="text-base font-medium text-gray-800">
+                  {user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : user.email}
+                </p>
+                <p className="text-sm text-gray-500">{user.email}</p>
+                {tenant && (
+                  <p className="text-xs text-gray-400">
+                    {tenant.name} • {user.role}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </DisclosurePanel>
     </Disclosure>
   )

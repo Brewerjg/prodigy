@@ -1,0 +1,79 @@
+// Multi-tenant Prisma schema with schema-per-tenant isolation
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Master tenant management table (lives in public schema)
+model Tenant {
+  id              String    @id @default(cuid())
+  name            String
+  subdomain       String    @unique
+  schema_name     String    @unique
+  status          TenantStatus @default(ACTIVE)
+  
+  // ConnectWise credentials (site_url is plain text, others encrypted)
+  cw_site_url               String?  // Plain text - public info
+  encrypted_cw_client_id    String?
+  encrypted_cw_public_key   String?
+  encrypted_cw_private_key  String?
+  encrypted_cw_company_id   String?
+  
+  // Metadata
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  
+  // Relations
+  users           TenantUser[]
+  encryption_key  EncryptionKey?
+  
+  @@map("tenants")
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+}
+
+// User management with tenant association
+model TenantUser {
+  id          String   @id @default(cuid())
+  tenant_id   String
+  email       String
+  password    String   // hashed
+  role        UserRole @default(USER)
+  first_name  String?
+  last_name   String?
+  
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  
+  tenant      Tenant   @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  
+  @@unique([tenant_id, email])
+  @@map("tenant_users")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+  VIEWER
+}
+
+// Data encryption keys (for envelope encryption)
+model EncryptionKey {
+  id              String   @id @default(cuid())
+  tenant_id       String   @unique
+  encrypted_key   String   // The actual encryption key, encrypted by KMS
+  key_version     Int      @default(1)
+  created_at      DateTime @default(now())
+  
+  tenant          Tenant   @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  
+  @@map("encryption_keys")
+}

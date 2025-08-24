@@ -1,17 +1,17 @@
-// app/api/connectwise/invoices/[companyId]/route.js
 import { NextResponse } from 'next/server';
-import { getConnectWiseConfig } from '../../../../../utils/connectwise';
+import { withTenantAuth } from '../../../../../lib/middleware/tenantMiddleware.js';
+import { getTenantConnectWiseConfig } from '../../../../../utils/tenantConnectWise.js';
 import axios from 'axios';
 
-export async function GET(req, { params }) {
-  const { Id } = params;
-  if (!Id) {
+async function handleGetCompanyInvoices(request, tenantContext, context) {
+  const { companyId } = context.params;
+  if (!companyId) {
     return NextResponse.json({ error: 'Missing companyId' }, { status: 400 });
   }
 
-  const { baseUrl, headers } = getConnectWiseConfig();
   try {
-    const url = `${baseUrl}/finance/invoices?conditions=company/id=${Id}&orderBy=id%20desc&pageSize=2`;
+    const { baseUrl, headers } = await getTenantConnectWiseConfig(tenantContext.tenant.id);
+    const url = `${baseUrl}/finance/invoices?conditions=company/id=${companyId}&orderBy=id%20desc&pageSize=2`;
     const { data } = await axios.get(url, { headers });
     return NextResponse.json(data);
   } catch (err) {
@@ -21,4 +21,11 @@ export async function GET(req, { params }) {
       { status: err.response?.status || 500 }
     );
   }
+}
+
+export async function GET(request, context) {
+  const handler = withTenantAuth((req, tenantContext) => 
+    handleGetCompanyInvoices(req, tenantContext, context)
+  );
+  return handler(request);
 }

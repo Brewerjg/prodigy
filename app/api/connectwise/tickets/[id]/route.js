@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
-import { getConnectWiseConfig } from '../../../../utils/connectwise';
+import { withTenantAuth } from '../../../../lib/middleware/tenantMiddleware.js';
+import { getTenantConnectWiseConfig } from '../../../../utils/tenantConnectWise.js';
+
 import axios from 'axios';
 
-export async function GET(request, { params }) {
+async function handleGetTicket(request, tenantContext, context) {
   try {
-    const { baseUrl, headers } = getConnectWiseConfig();
-    const { id } = params;
+    const { baseUrl, headers } = await getTenantConnectWiseConfig(tenantContext.tenant.id);
+    const { id } = context.params;
 
     // Fetch individual ticket details from ConnectWise API
     const response = await axios.get(`${baseUrl}/service/tickets/${id}`, {
@@ -25,4 +27,11 @@ export async function GET(request, { params }) {
       { status }
     );
   }
+}
+
+export async function GET(request, context) {
+  const handler = withTenantAuth((req, tenantContext) => 
+    handleGetTicket(req, tenantContext, context)
+  );
+  return handler(request);
 }

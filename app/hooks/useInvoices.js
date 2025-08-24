@@ -1,26 +1,36 @@
 import { useQuery } from '@tanstack/react-query';
+import { useTenant } from './useTenant.js';
 
 export const useAllInvoices = () => {
+  const { getAuthHeaders, isAuthenticated } = useTenant();
+  
   return useQuery({
     queryKey: ['allInvoicesForDropdown'],
     queryFn: async () => {
-      const res = await fetch('/api/connectwise/invoices');
+      const res = await fetch('/api/connectwise/invoices', {
+        headers: getAuthHeaders()
+      });
       if (!res.ok) throw new Error('Failed to fetch invoices');
       return res.json();
-    }
+    },
+    enabled: isAuthenticated()
   });
 };
 
 export const useInvoiceComparison = (customerId, selectedInvoiceA, selectedInvoiceB) => {
+  const { getAuthHeaders, isAuthenticated } = useTenant();
+  
   return useQuery({
     queryKey: ['invoiceComparison', customerId, selectedInvoiceA, selectedInvoiceB],
-    queryFn: () => fetchInvoiceComparison(customerId, selectedInvoiceA, selectedInvoiceB),
-    enabled: !!customerId
+    queryFn: () => fetchInvoiceComparison(customerId, selectedInvoiceA, selectedInvoiceB, getAuthHeaders()),
+    enabled: !!customerId && isAuthenticated()
   });
 };
 
-const fetchInvoiceComparison = async (customerId, selectedInvoiceA, selectedInvoiceB) => {
-  const invRes = await fetch(`/api/connectwise/invoices?customerId=${customerId}`);
+const fetchInvoiceComparison = async (customerId, selectedInvoiceA, selectedInvoiceB, authHeaders) => {
+  const invRes = await fetch(`/api/connectwise/invoices?customerId=${customerId}`, {
+    headers: authHeaders
+  });
   if (!invRes.ok) throw new Error('Failed to load invoices');
   const invoices = await invRes.json();
 
@@ -64,7 +74,9 @@ const fetchInvoiceComparison = async (customerId, selectedInvoiceA, selectedInvo
 
   const [itemsA, itemsB] = await Promise.all(
     [invoiceA, invoiceB].map(inv => 
-      fetch(`/api/connectwise/invoice/${inv.id}/invoiceItems`)
+      fetch(`/api/connectwise/invoice/${inv.id}/invoiceItems`, {
+        headers: authHeaders
+      })
         .then(res => {
           if (!res.ok) throw new Error(`Failed to load items for invoice ${inv.id}`);
           return res.json();

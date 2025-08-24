@@ -139,28 +139,85 @@ prodigy/
 
 ## Environment Variables
 
-Required environment variables for ConnectWise API integration:
+Required environment variables:
 
 ```env
-NEXT_PUBLIC_CONNECTWISE_SITE_URL=your_connectwise_site_url
-NEXT_PUBLIC_CONNECTWISE_CLIENT_ID=your_client_id
-NEXT_PUBLIC_CONNECTWISE_PUBLIC_KEY=your_public_key
-NEXT_PUBLIC_CONNECTWISE_PRIVATE_KEY=your_private_key
-NEXT_PUBLIC_CONNECTWISE_COMPANY_ID=your_company_id
+# Database (get from Neon dashboard)
+DATABASE_URL="postgresql://username:password@ep-example.us-east-1.aws.neon.tech/dbname?sslmode=require"
+
+# Development encryption (replace with real key)
+ENCRYPTION_MASTER_KEY="your-256-bit-master-key-here-dev-only"
+
+# JWT secret for authentication
+JWT_SECRET="your-jwt-secret-here"
+
+# Google Cloud KMS (production only)
+GOOGLE_CLOUD_PROJECT_ID="prodigy-production"
+GOOGLE_CLOUD_KMS_LOCATION="global" 
+GOOGLE_CLOUD_KMS_KEY_RING="prodigy-encryption-ring"
+GOOGLE_CLOUD_KMS_KEY="prodigy-tenant-encryption-key"
+GOOGLE_APPLICATION_CREDENTIALS="path/to/service-account-key.json"
+
+# Environment
+NODE_ENV="development"
+
+# Default tenant schema for development
+DEFAULT_TENANT_SCHEMA="tenant_default"
 ```
 
-## Getting Started
+**Note**: ConnectWise credentials are now stored per-tenant and encrypted in the database.
 
-First, run the development server:
+## Multi-Tenant Setup
+
+This is now a **multi-tenant platform** where each customer gets their own isolated data and ConnectWise configuration.
+
+### Quick Setup
+
+1. **Create a Neon Database**:
+   - Go to [Neon Console](https://console.neon.tech/)
+   - Create a new project
+   - Copy the connection string
+
+2. **Set up environment variables**:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your database URL and secrets
+   ```
+
+3. **Initialize the database**:
+   ```bash
+   npm run db:setup
+   ```
+   This will:
+   - Test your database connection
+   - Run migrations to create tables
+   - Optionally create your first tenant
+
+4. **Start development**:
+   ```bash
+   npm run dev
+   ```
+
+### Multi-Tenant Architecture
+
+- **Schema per tenant**: Each tenant gets their own database schema
+- **Encrypted credentials**: ConnectWise API keys are encrypted per-tenant
+- **Subdomain routing**: `tenant1.localhost:3000`, `tenant2.localhost:3000`
+- **Role-based access**: Admin, User, Viewer roles per tenant
+
+### Tenant URLs
+
+- **Development**: `http://[subdomain].localhost:3000`
+- **Production**: `https://[subdomain].yourdomain.com`
+
+### Available Scripts
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run dev          # Start development server
+npm run db:setup     # Interactive database setup
+npm run db:migrate   # Run database migrations  
+npm run db:generate  # Generate Prisma client
+npm run db:studio    # Open Prisma Studio
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.

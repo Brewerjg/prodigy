@@ -1,19 +1,41 @@
 import { NextResponse } from 'next/server';
-import { getConnectWiseConfig } from '../../../utils/connectwise';
+import { withTenantAuth } from '../../../lib/middleware/tenantMiddleware.js';
+import { getTenantConnectWiseConfig } from '../../../utils/tenantConnectWise.js';
 import axios from 'axios';
 
-export async function GET() {
+async function handleGetCompanies(request, tenantContext) {
   try {
-    const { baseUrl, headers } = getConnectWiseConfig();
+    // Check if ConnectWise is configured for this tenant
+    let config;
+    try {
+      config = await getTenantConnectWiseConfig(tenantContext.tenant.id);
+    } catch (error) {
+      console.log('ConnectWise not configured for tenant:', tenantContext.tenant.subdomain);
+      return NextResponse.json([], { status: 200 }); // Return empty array if not configured
+    }
+    
+    const { baseUrl, headers } = config;
 
-    const response = await axios.get(`${baseUrl}/company/companies`, {
+    const url = `${baseUrl}/company/companies`;
+    const params = { pageSize: 1000 };
+    
+    console.log('Fetching companies from:', url);
+    console.log('Request params:', params);
+    console.log('Headers clientId:', headers.clientId);
+    
+    const response = await axios.get(url, {
       headers,
-      params: {
-        pageSize: 1000
-      }
+      params
     });
 
-    return NextResponse.json(response.data);
+    console.log('ConnectWise companies API response status:', response.status);
+    console.log('Response data type:', typeof response.data, 'Is array:', Array.isArray(response.data));
+    
+    // Ensure we're returning an array
+    const companies = Array.isArray(response.data) ? response.data : [];
+    console.log(`Returning ${companies.length} companies`);
+    
+    return NextResponse.json(companies);
   } catch (error) {
     console.error('Error fetching companies:', error?.response?.data || error.message);
     const status = error.response?.status || 500;
@@ -27,3 +49,5 @@ export async function GET() {
     );
   }
 }
+
+export const GET = withTenantAuth(handleGetCompanies);
